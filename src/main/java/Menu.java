@@ -8,31 +8,37 @@ public class Menu {
 
     public static void start() {
         while (true) {
-        System.out.println("Выберите действие (напишите число от 1 до 5):\n" +
-                "1) Поиск контакта по имени\n2) Добавить новый контакт\n3) Удалить контакт\n4) " +
-                "Вывести телефонную книгу на экран\n5) Выйти из приложения");
-        int inp = inputMenuNumber(5);
-        switch (inp) {
-            case 1:
-                findContactsByName();
-                break;
-            case 2:
-                addContact();
-                break;
-            case 3:
-                deleteContact();
-                break;
-            case 4:
-                printAll();
-                break;
-            case 5:
-                return;
-        }}
+            System.out.println("Выберите действие (напишите число от 1 до 5):\n" +
+                    "1) Поиск контакта по имени\n2) Добавить новый контакт\n3) Удалить контакт\n4) " +
+                    "Вывести телефонную книгу на экран\n5) Выйти из приложения");
+            int inp = Utils.inputMenuNumber(5);
+            switch (inp) {
+                case 1:
+                    findContactsByName();
+                    break;
+                case 2:
+                    addContact();
+                    break;
+                case 3:
+                    deleteContact();
+                    break;
+                case 4:
+                    printAll();
+                    break;
+                case 5:
+                    return;
+            }
+        }
     }
 
     private static void printAll() {
-        System.out.println("Вот список ваших контактов:\n");
-        book.getContacts().forEach(System.out::println);
+        Collection<Contact> allContacts = book.getContacts();
+
+        if (allContacts.size() != 0) {
+            System.out.println("Вот список ваших контактов:\n");
+            allContacts.forEach(System.out::println);
+        }
+        else System.out.println("Телефонная книга пуста!\n");
     }
 
     private static void deleteContact() {
@@ -46,18 +52,16 @@ public class Menu {
         List<Contact> matches = book.findByFio(fio);
         if (matches.size() == 0) {
             System.out.println("Контакт с таким именем не найден!\n");
-        }
-        else if (matches.size() > 1) {
+        } else if (matches.size() > 1) {
             System.out.println("Найдено несколько совпадений:");
             for (int i = 0; i < matches.size(); i++) {
                 System.out.printf("%d. %s\n", i + 1, matches.get(i).toString());
             }
             System.out.print("Введите номер контакта, который хотите удалить: ");
-            int toDelete = inputMenuNumber(matches.size());
+            int toDelete = Utils.inputMenuNumber(matches.size());
             book.deleteContact(matches.get(toDelete - 1).getId());
             System.out.println("Контакт удален.\n");
-        }
-        else {
+        } else {
             System.out.println(matches.get(0).toString());
             book.deleteContact(matches.get(0).getId());
             System.out.println("Контакт удален.\n");
@@ -68,8 +72,13 @@ public class Menu {
         System.out.println("Введите фрагмент имени человека, контакт которого хотите найти: ");
         sc.nextLine();
         String fragment = sc.nextLine().toLowerCase().trim();
-        System.out.println("Вот что нашлось: ");
-        book.findMatches(fragment).forEach(System.out::println);
+        List<Contact> matches = book.findMatches(fragment);
+
+        if (matches.size() != 0) {
+            System.out.println("Вот что нашлось: ");
+            matches.forEach(System.out::println);
+        }
+        else System.out.println("Ничего не нашлось!");
     }
 
     private static void addContact() {
@@ -79,7 +88,8 @@ public class Menu {
 
     private static Contact createContact() {
         System.out.println("Звездочками будут помечены поля, обязательные для ввода. " +
-                "Чтобы оставить необязательное поле пустым, нажмите Enter.");
+                "Чтобы оставить необязательное поле пустым, нажмите Enter.\n" +
+                "(имена контактов лучше писать латиницей!)");
         String[] name = createName();
         List<String> numbers = createNumberList();
         String address = createAddress();
@@ -91,20 +101,14 @@ public class Menu {
 
     private static String[] createName() {
         System.out.println("* Введите фамилию, имя и отчество через пробел: ");
-        sc.nextLine();
         String name = sc.nextLine().toLowerCase().trim();
+
         // Почему-то не работает на русские буквы Я НЕ ЗНАЮ ПОЧЕМУ ОНО ДОЛЖНО.
         while (!name.matches("\\p{L}+ \\p{L}+ \\p{L}+")) {
             System.out.println("Неверный ввод, попробуйте еще раз: ");
             name = sc.nextLine().toLowerCase().trim();
         }
-        String[] nameParts = name.split(" ");
-//        for (int i = 0; i < 3; i++) {
-//            nameParts[i] = nameParts[i].substring(0, 1).toUpperCase() +
-//                    nameParts[i].substring(1).toLowerCase();
-//        }
-//        System.out.printf("Новый контакт: %s %s %s\n", nameParts[0], nameParts[1], nameParts[2]);
-        return nameParts;
+        return name.split(" ");
     }
 
     private static String createEmail() {
@@ -118,7 +122,7 @@ public class Menu {
                 emailAddr.validate();
             } catch (AddressException ex) {
                 System.out.println("Некорректный e-mail, попробуйте еще раз:");
-                email = sc.nextLine();//.trim();
+                email = sc.nextLine().trim();
                 continue;
             }
             break;
@@ -147,19 +151,19 @@ public class Menu {
     private static List<String> createNumberList() {
         List<String> numbers = new ArrayList<>();
         System.out.println("* Введите номер телефона без дефисов и пробелов, в российском формате: ");
-        String number = scanNumber();
-        int a = 0;
+        sc.next();
+        String number = Utils.scanNumber();
         do {
             while (!number.matches("\\d{10}") || numbers.contains(number) ||
                     !book.validNumber(number)) {
                 System.out.println("Номер телефона некорректный или уже записан другому " +
                         "контакту, попробуйте еще раз:");
-                number = scanNumber();
+                number = Utils.scanNumber();
             }
             numbers.add(number);
             System.out.println("Если вы хотите добавить еще один номер телефона, введите его, " +
                     "иначе нажмите Enter.");
-            number = scanNumber();
+            number = Utils.scanNumber();
         } while (number.length() != 0);
         return numbers;
     }
@@ -170,31 +174,5 @@ public class Menu {
         if (address.length() == 0)
             return null;
         return address;
-    }
-
-    private static String scanNumber() {
-        String number = sc.nextLine().trim();
-        if (number.startsWith("+7"))
-            return number.substring(2);
-        if (number.startsWith("8"))
-            return number.substring(1);
-        return number;
-    }
-
-    static int inputMenuNumber(int maxNumber) {
-        int inp;
-        do {
-            if (sc.hasNextInt()) {
-                inp = sc.nextInt();
-                if (inp >= 1 && inp <= maxNumber) {
-                    return inp;
-                } else
-                    System.out.print("Такого пункта нет! ");
-            } else {
-                sc.next();
-                System.out.print("Это не число! ");
-            }
-            System.out.print("Попробуйте еще раз: ");
-        } while (true);
     }
 }
