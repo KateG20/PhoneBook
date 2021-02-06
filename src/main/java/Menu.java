@@ -43,7 +43,6 @@ public class Menu {
 
     private static void deleteContact() {
         System.out.println("Введите полное имя человека, контакт которого хотите удалить:");
-        sc.nextLine();
         String fio = sc.nextLine().toLowerCase().trim();
         while (!fio.matches("^\\p{L}+ \\p{L}+ \\p{L}+$")) {
             System.out.println("Неверный ввод, попробуйте еще раз: ");
@@ -151,7 +150,6 @@ public class Menu {
     private static List<String> createNumberList() {
         List<String> numbers = new ArrayList<>();
         System.out.println("* Введите номер телефона без дефисов и пробелов, в российском формате: ");
-        sc.next();
         String number = Utils.scanNumber();
         do {
             while (!number.matches("\\d{10}") || numbers.contains(number) ||
