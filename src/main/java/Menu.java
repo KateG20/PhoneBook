@@ -7,19 +7,11 @@ public class Menu {
     private static final PhoneBook book = PhoneBook.getBook();
 
     public static void start() {
-//        try {
-//        book = PhoneBook.getBook();}
-//        catch (FileNotFoundException e) {
-//            System.out.println("Файл телефонной книги не был найден в директории по умолчанию. " +
-//                    "Она либо была перемещена, либо еще не была создана. Создать новую книгу? (да/нет) ");
-//            if (sc.nextLine().toLowerCase().equals("да"))
-//
-//        }
-
-        System.out.println("Выберите действие (напишите число от 1 до 4):\n" +
-                "1) Поиск контакта\n2) Добавить новый контакт\n3) Удалить контакт\n4) " +
-                "Вывести телефонную книгу на экран");
-        int inp = inputMenuNumber(4);
+        while (true) {
+        System.out.println("Выберите действие (напишите число от 1 до 5):\n" +
+                "1) Поиск контакта по имени\n2) Добавить новый контакт\n3) Удалить контакт\n4) " +
+                "Вывести телефонную книгу на экран\n5) Выйти из приложения");
+        int inp = inputMenuNumber(5);
         switch (inp) {
             case 1:
                 findContactsByName();
@@ -33,23 +25,27 @@ public class Menu {
             case 4:
                 printAll();
                 break;
-        }
+            case 5:
+                return;
+        }}
     }
 
     private static void printAll() {
+        System.out.println("Вот список ваших контактов:\n");
         book.getContacts().forEach(System.out::println);
     }
 
     private static void deleteContact() {
         System.out.println("Введите полное имя человека, контакт которого хотите удалить:");
-        String fio = sc.nextLine().toLowerCase();//.trim();
+        sc.nextLine();
+        String fio = sc.nextLine().toLowerCase().trim();
         while (!fio.matches("^\\p{L}+ \\p{L}+ \\p{L}+$")) {
             System.out.println("Неверный ввод, попробуйте еще раз: ");
             fio = sc.nextLine().toLowerCase().trim();
         }
         List<Contact> matches = book.findByFio(fio);
         if (matches.size() == 0) {
-            System.out.println("Контакт с таким именем не найден!");
+            System.out.println("Контакт с таким именем не найден!\n");
         }
         else if (matches.size() > 1) {
             System.out.println("Найдено несколько совпадений:");
@@ -59,23 +55,26 @@ public class Menu {
             System.out.print("Введите номер контакта, который хотите удалить: ");
             int toDelete = inputMenuNumber(matches.size());
             book.deleteContact(matches.get(toDelete - 1).getId());
-            System.out.println("Контакт удален.");
+            System.out.println("Контакт удален.\n");
         }
         else {
             System.out.println(matches.get(0).toString());
             book.deleteContact(matches.get(0).getId());
-            System.out.println("Контакт удален.");
+            System.out.println("Контакт удален.\n");
         }
     }
 
     private static void findContactsByName() {
         System.out.println("Введите фрагмент имени человека, контакт которого хотите найти: ");
-        String fragment = sc.nextLine().toLowerCase();//.trim();
+        sc.nextLine();
+        String fragment = sc.nextLine().toLowerCase().trim();
+        System.out.println("Вот что нашлось: ");
         book.findMatches(fragment).forEach(System.out::println);
     }
 
     private static void addContact() {
         book.addContact(createContact());
+        System.out.println("Контакт добавлен!\n");
     }
 
     private static Contact createContact() {
@@ -86,16 +85,18 @@ public class Menu {
         String address = createAddress();
         Calendar date = createDateOfBirth();
         String email = createEmail();
+
         return new Contact(name[0], name[1], name[2], address, numbers, date, email);
     }
 
     private static String[] createName() {
         System.out.println("* Введите фамилию, имя и отчество через пробел: ");
         sc.nextLine();
-        String name = sc.nextLine();//.toLowerCase();//.trim();
-        while (!name.matches("^\\p{L}+ \\p{L}+ \\p{L}+$")) {
+        String name = sc.nextLine().toLowerCase().trim();
+        // Почему-то не работает на русские буквы Я НЕ ЗНАЮ ПОЧЕМУ ОНО ДОЛЖНО.
+        while (!name.matches("\\p{L}+ \\p{L}+ \\p{L}+")) {
             System.out.println("Неверный ввод, попробуйте еще раз: ");
-            name = sc.nextLine().toLowerCase();//.trim();
+            name = sc.nextLine().toLowerCase().trim();
         }
         String[] nameParts = name.split(" ");
 //        for (int i = 0; i < 3; i++) {
@@ -108,7 +109,7 @@ public class Menu {
 
     private static String createEmail() {
         System.out.println("Введите e-mail:");
-        String email = sc.nextLine();//.trim();
+        String email = sc.nextLine().trim();
         if (email.length() == 0)
             return null;
         while (true) {
@@ -131,12 +132,12 @@ public class Menu {
                 "|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\\d|2[0-8])(\\.)(?:(?:0?[1-9])|" +
                 "(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$";
         System.out.println("Введите дату рождения в формате дд.мм.гггг: ");
-        String dateStr = sc.nextLine();//.trim();
+        String dateStr = sc.nextLine().trim();
         if (dateStr.length() == 0)
             return null;
         while (!dateStr.matches(datePattern)) {
             System.out.println("Некорректная дата, попробуйте еще раз: ");
-            dateStr = sc.nextLine();//.trim();
+            dateStr = sc.nextLine().trim();
         }
         return new GregorianCalendar(Integer.parseInt(dateStr.substring(6)),
                 Integer.parseInt(dateStr.substring(3, 5)) - 1,
@@ -146,7 +147,6 @@ public class Menu {
     private static List<String> createNumberList() {
         List<String> numbers = new ArrayList<>();
         System.out.println("* Введите номер телефона без дефисов и пробелов, в российском формате: ");
-//        sc.nextLine();
         String number = scanNumber();
         int a = 0;
         do {
@@ -166,14 +166,14 @@ public class Menu {
 
     private static String createAddress() {
         System.out.println("Введите адрес проживания этого человека (любой формат):");
-        String address = sc.nextLine();//.trim();
+        String address = sc.nextLine().trim();
         if (address.length() == 0)
             return null;
         return address;
     }
 
     private static String scanNumber() {
-        String number = sc.nextLine();//.trim();
+        String number = sc.nextLine().trim();
         if (number.startsWith("+7"))
             return number.substring(2);
         if (number.startsWith("8"))

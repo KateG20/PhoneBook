@@ -2,13 +2,12 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import javax.swing.filechooser.FileSystemView;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,31 +15,47 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class PhoneBook {
-    String dataPath = FileSystemView.getFileSystemView().getDefaultDirectory().getPath()
-            + "MyPhoneBook.txt";
+    private static final String dataPath = FileSystemView.getFileSystemView().getDefaultDirectory().getPath()
+            + File.separator + "MyPhoneBook.txt";
+
     private static List<Contact> contacts;
     private static PhoneBook book;
-    private final Gson gson = new Gson();
+    private static final Gson gson = new Gson();
 
     public Collection<Contact> getContacts() {
         return Collections.unmodifiableCollection(new ArrayList<>(contacts));
     }
 
     public PhoneBook() {
-        Path path = Paths.get(dataPath);
         File file = new File(dataPath);
         try {
             if (!file.exists() || file.isDirectory()) {
-                Files.write(path, Collections.singleton(""), StandardCharsets.UTF_8);
+//                Thread shutdownHook = new Thread(this::saveBook);
+//                Runtime.getRuntime().addShutdownHook(shutdownHook);
+
                 contacts = new ArrayList<>();
             } else {
-                List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);
-                String json = String.join("", lines);
-                Type listType = new TypeToken<ArrayList<Contact>>() { }.getType();
+                // Если книга уже существует, воссоздаем контактики из файла
+//                List<String> lines = new ArrayList<>();// = Files.readAllLines(path, StandardCharsets.UTF_8);
+                String json;
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                        new FileInputStream(dataPath), StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line = reader.readLine();
+
+                    while (line != null) {
+                        sb.append(line);
+                        sb.append(System.lineSeparator());
+                        line = reader.readLine();
+                    }
+                    json = sb.toString();
+                }
+//                String json = String.join("", lines);
+                Type listType = new TypeToken<ArrayList<Contact>>() {
+                }.getType();
                 contacts = gson.fromJson(json, listType); // TODO: эксепшоны
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 //        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
@@ -62,7 +77,7 @@ public class PhoneBook {
     public static PhoneBook getBook() {
         if (book == null) {
             book = new PhoneBook();
-            contacts = new ArrayList<>();
+//            contacts = new ArrayList<>();
         }
         return book;
     }
@@ -91,4 +106,13 @@ public class PhoneBook {
         return contacts.stream().noneMatch(c -> c.ownsNumber(number));
     }
 
+    public static void saveBook() {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(dataPath), StandardCharsets.UTF_8))) {
+            String json = gson.toJson(contacts);
+            writer.append(json);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

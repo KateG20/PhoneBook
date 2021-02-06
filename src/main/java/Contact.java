@@ -80,7 +80,7 @@ public class Contact {
 
     public String getBirthdayStr() {
         SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy");
-        return format.format(birthday);
+        return format.format(birthday.getTime());
     }
 
     public String getNumbersStr() {
